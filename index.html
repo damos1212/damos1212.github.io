@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -407,11 +406,11 @@
         <h2>${selectedPokemon.name} VS ${randomOpponent.name}</h2>
         <div class="battle-field">
           <div>
-            <img src="${selectedPokemon.image}" alt="${selectedPokemon.name}" class="slow-shake">
+            <img src="${selectedPokemon.image}" alt="${selectedPokemon.name}" id="playerPokemon" class="slow-shake">
             <div class="hp-bar"><div class="hp-bar-inner" id="playerHP" style="width: 100%;"></div></div>
           </div>
           <div>
-            <img src="${randomOpponent.image}" alt="${randomOpponent.name}" class="shake">
+            <img src="${randomOpponent.image}" alt="${randomOpponent.name}" id="opponentPokemon" class="shake">
             <div class="hp-bar"><div class="hp-bar-inner" id="opponentHP" style="width: 100%;"></div></div>
           </div>
         </div>
@@ -422,6 +421,8 @@
       const opponentHPBar = document.getElementById('opponentHP');
       const battleLog = document.getElementById('battleLog');
       const moveButtons = document.getElementById('moveButtons');
+      const playerPokemonImg = document.getElementById('playerPokemon');
+      const opponentPokemonImg = document.getElementById('opponentPokemon');
 
       // Render move buttons for the player to choose from
       selectedPokemon.moves.forEach((move) => {
@@ -434,11 +435,19 @@
       });
 
       async function playerAttack(playerMove) {
+        playerPokemonImg.classList.add('slow-shake');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        playerPokemonImg.classList.remove('slow-shake');
+
         const playerDamage = Math.floor(Math.random() * (selectedPokemon.stats.attack / 2)) + 1;
         opponentHP -= playerDamage;
         opponentHPBar.style.width = `${Math.max(0, (opponentHP / randomOpponent.stats.hp) * 100)}%`;
         battleLog.innerHTML += `<p style="color:${getMoveColor(playerMove.type)};">${selectedPokemon.name} used ${playerMove.name}! It dealt ${playerDamage} damage!</p>`;
         battleLog.scrollTop = battleLog.scrollHeight;
+
+        opponentPokemonImg.classList.add('shake');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        opponentPokemonImg.classList.remove('shake');
 
         if (opponentHP <= 0) {
           battleLog.innerHTML += `<p>${selectedPokemon.name} wins!</p>`;
@@ -449,13 +458,21 @@
         opponentAttack();
       }
 
-      function opponentAttack() {
+      async function opponentAttack() {
+        opponentPokemonImg.classList.add('slow-shake');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        opponentPokemonImg.classList.remove('slow-shake');
+
         const opponentMove = randomOpponent.moves[Math.floor(Math.random() * randomOpponent.moves.length)];
         const opponentDamage = Math.floor(Math.random() * (randomOpponent.stats.attack / 2)) + 1;
         playerHP -= opponentDamage;
         playerHPBar.style.width = `${Math.max(0, (playerHP / selectedPokemon.stats.hp) * 100)}%`;
         battleLog.innerHTML += `<p style="color:${getMoveColor(opponentMove.type)};">${randomOpponent.name} used ${opponentMove.name}! It dealt ${opponentDamage} damage!</p>`;
         battleLog.scrollTop = battleLog.scrollHeight;
+
+        playerPokemonImg.classList.add('shake');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        playerPokemonImg.classList.remove('shake');
 
         if (playerHP <= 0) {
           battleLog.innerHTML += `<p>${randomOpponent.name} wins!</p>`;
@@ -486,6 +503,8 @@
         default: return '#ffffff';
       }
     }
+
+
 
     prevButton.addEventListener('click', () => {
       if (currentIndex > 0 && !inBattleMode) {
