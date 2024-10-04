@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -178,13 +179,48 @@
       border: none;
       border-radius: 5px;
       cursor: pointer;
-      color: #ffcc00;
+      color: #ffffff;
       font-size: 1em;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
       transition: background-color 0.3s;
+      text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; /* Black outline */
     }
     .move-button:hover {
       background-color: #555;
+    }
+    @keyframes shake {
+      0% { transform: translate(1px, 1px) rotate(0deg); }
+      10% { transform: translate(-1px, -2px) rotate(-1deg); }
+      20% { transform: translate(-3px, 0px) rotate(1deg); }
+      30% { transform: translate(3px, 2px) rotate(0deg); }
+      40% { transform: translate(1px, -1px) rotate(1deg); }
+      50% { transform: translate(-1px, 2px) rotate(-1deg); }
+      60% { transform: translate(-3px, 1px) rotate(0deg); }
+      70% { transform: translate(3px, 1px) rotate(-1deg); }
+      80% { transform: translate(-1px, -1px) rotate(1deg); }
+      90% { transform: translate(1px, 2px) rotate(0deg); }
+      100% { transform: translate(1px, -2px) rotate(-1deg); }
+    }
+    .shake {
+      animation: shake 0.5s;
+      animation-iteration-count: 1;
+    }
+    @keyframes slowShake {
+      0% { transform: translate(1px, 1px) rotate(0deg); }
+      10% { transform: translate(-1px, -1px) rotate(-0.5deg); }
+      20% { transform: translate(-2px, 0px) rotate(0.5deg); }
+      30% { transform: translate(2px, 1px) rotate(0deg); }
+      40% { transform: translate(1px, -1px) rotate(0.5deg); }
+      50% { transform: translate(-1px, 1px) rotate(-0.5deg); }
+      60% { transform: translate(-2px, 0px) rotate(0deg); }
+      70% { transform: translate(2px, 1px) rotate(-0.5deg); }
+      80% { transform: translate(-1px, -1px) rotate(0.5deg); }
+      90% { transform: translate(1px, 1px) rotate(0deg); }
+      100% { transform: translate(1px, -1px) rotate(-0.5deg); }
+    }
+    .slow-shake {
+      animation: slowShake 1s;
+      animation-iteration-count: 1;
     }
   </style>
 </head>
@@ -244,7 +280,19 @@
         const detailsResponse = await fetch(url);
         if (!detailsResponse.ok) throw new Error('Network response was not ok');
         const detailsData = await detailsResponse.json();
-        const moves = detailsData.moves.slice(0, 4).map(move => move.move.name);
+        const moves = detailsData.moves.slice(0, 4).map(move => ({
+          name: move.move.name,
+          typeUrl: move.move.url
+        }));
+        const moveDetails = await Promise.all(moves.map(async move => {
+          const moveResponse = await fetch(move.typeUrl);
+          const moveData = await moveResponse.json();
+          return {
+            name: move.name,
+            type: moveData.type.name,
+            power: moveData.power
+          };
+        }));
         return {
           id: detailsData.id,
           name: detailsData.name,
@@ -255,7 +303,7 @@
             defense: detailsData.stats[2].base_stat,
             speed: detailsData.stats[5].base_stat,
           },
-          moves,
+          moves: moveDetails,
           types: detailsData.types.map(typeInfo => typeInfo.type.name).join(', '),
           height: detailsData.height / 10 + ' m',
           weight: detailsData.weight / 10 + ' kg',
@@ -359,11 +407,11 @@
         <h2>${selectedPokemon.name} VS ${randomOpponent.name}</h2>
         <div class="battle-field">
           <div>
-            <img src="${selectedPokemon.image}" alt="${selectedPokemon.name}">
+            <img src="${selectedPokemon.image}" alt="${selectedPokemon.name}" class="slow-shake">
             <div class="hp-bar"><div class="hp-bar-inner" id="playerHP" style="width: 100%;"></div></div>
           </div>
           <div>
-            <img src="${randomOpponent.image}" alt="${randomOpponent.name}">
+            <img src="${randomOpponent.image}" alt="${randomOpponent.name}" class="shake">
             <div class="hp-bar"><div class="hp-bar-inner" id="opponentHP" style="width: 100%;"></div></div>
           </div>
         </div>
@@ -379,7 +427,8 @@
       selectedPokemon.moves.forEach((move) => {
         const moveButton = document.createElement('button');
         moveButton.className = 'move-button';
-        moveButton.textContent = move;
+        moveButton.textContent = move.name;
+        moveButton.style.backgroundColor = getMoveColor(move.type);
         moveButton.addEventListener('click', () => playerAttack(move));
         moveButtons.appendChild(moveButton);
       });
@@ -388,7 +437,7 @@
         const playerDamage = Math.floor(Math.random() * (selectedPokemon.stats.attack / 2)) + 1;
         opponentHP -= playerDamage;
         opponentHPBar.style.width = `${Math.max(0, (opponentHP / randomOpponent.stats.hp) * 100)}%`;
-        battleLog.innerHTML += `<p>${selectedPokemon.name} used ${playerMove}! It dealt ${playerDamage} damage!</p>`;
+        battleLog.innerHTML += `<p style="color:${getMoveColor(playerMove.type)};">${selectedPokemon.name} used ${playerMove.name}! It dealt ${playerDamage} damage!</p>`;
         battleLog.scrollTop = battleLog.scrollHeight;
 
         if (opponentHP <= 0) {
@@ -405,12 +454,36 @@
         const opponentDamage = Math.floor(Math.random() * (randomOpponent.stats.attack / 2)) + 1;
         playerHP -= opponentDamage;
         playerHPBar.style.width = `${Math.max(0, (playerHP / selectedPokemon.stats.hp) * 100)}%`;
-        battleLog.innerHTML += `<p>${randomOpponent.name} used ${opponentMove}! It dealt ${opponentDamage} damage!</p>`;
+        battleLog.innerHTML += `<p style="color:${getMoveColor(opponentMove.type)};">${randomOpponent.name} used ${opponentMove.name}! It dealt ${opponentDamage} damage!</p>`;
         battleLog.scrollTop = battleLog.scrollHeight;
 
         if (playerHP <= 0) {
           battleLog.innerHTML += `<p>${randomOpponent.name} wins!</p>`;
         }
+      }
+    }
+
+    function getMoveColor(type) {
+      switch (type) {
+        case 'fire': return '#f08030';
+        case 'water': return '#6890f0';
+        case 'grass': return '#78c850';
+        case 'electric': return '#f8d030';
+        case 'psychic': return '#f85888';
+        case 'ice': return '#98d8d8';
+        case 'dragon': return '#7038f8';
+        case 'dark': return '#705848';
+        case 'fairy': return '#f0b6bc';
+        case 'normal': return '#a8a878';
+        case 'fighting': return '#c03028';
+        case 'flying': return '#a890f0';
+        case 'poison': return '#a040a0';
+        case 'ground': return '#e0c068';
+        case 'rock': return '#b8a038';
+        case 'bug': return '#a8b820';
+        case 'ghost': return '#705898';
+        case 'steel': return '#b8b8d0';
+        default: return '#ffffff';
       }
     }
 
