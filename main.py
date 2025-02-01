@@ -704,7 +704,7 @@ class Game:
         self.chain_sound.set_volume(0.2)  # Set block match (chain) sound to 20% volume
 
         # NEW: Load a single vanish sound and precompute 7 variants.
-        base_vanish = pygame.mixer.Sound("vanish.mp3")
+        base_vanish = pygame.mixer.Sound("vanish.wav")
         vanish_array = pygame.sndarray.array(base_vanish)
         self.vanish_sounds = []
         # Prepare 7 different pitch factors, e.g. 1.0, 1.1, 1.2, ... 1.6
@@ -716,8 +716,8 @@ class Game:
             self.vanish_sounds.append(new_sound)
 
         # Background music tracks.
-        self.bg_normal = "bg_normal.mp3"
-        self.bg_danger = "bg_danger.mp3"
+        self.bg_normal = "bg_normal.ogg"
+        self.bg_danger = "bg_danger.ogg"
         self.current_bg = "normal"  # current background flag
 
         # Start with normal background music.
